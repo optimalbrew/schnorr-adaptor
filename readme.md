@@ -17,6 +17,12 @@ then try
 go run src/adaptor_signature.go
 ```
 
+The following step by step from Gemini is the standard approach, where a valid signature `s` is 
+"encrypted" (using a random value `t` number in this example) to obtain an adaptor `s'`. This Adaptor
+is NOT a valid Schnorr signature. Someone who learns `t` can *adapt* `s'` to a new, valid signature `s_adapted`
+by just adding `t` to `s'`. But there are other ways of creating adaptors (see below).
+
+
 ## Step by step breakdown from Gemini
 Here's a breakdown of the first four steps in constructing Schnorr adaptor signatures:
 
@@ -65,3 +71,15 @@ Here's a breakdown of the first four steps in constructing Schnorr adaptor signa
             * Compute $e = H(R || P_A || m_1)$.
             * Verify if $s_{adapted}G + eP_A = (k - ex_A)G + e(x_A G) = kG - ex_A G + ex_A G = kG = R$.
 
+### Other ways of creating adaptors
+There are other ways of incorporating the secret `t`, e.g. it can be included in the hash operation (the "challenge").
+But that leads to different tradeoffs. Also, when using that approach, the adaptor signature remains a valid Schnorr sig!
+
+This is a comparison of the approaches.
+
+| Feature            | Original Method (t in 's')                                  | Modified Method (t in 'e')                                    |
+| ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Adaptor Signature  | (R, s'), where s' is *not* a valid Schnorr signature on m | (R, s'), where s' *is* a valid Schnorr signature on m         |
+| Adaptation         | s_adapted = s' + t                                        | Recompute e_adapted = H(R || P || m || t), s_adapted = k - e_adapted * x_A |
+| Binding of 't'     | Indirect (through 's')                                      | Strong (directly in 'e')                                      |
+| Verification       | Uses original 'e' for adapted signature                     | Uses recomputed 'e_adapted'                                  |
